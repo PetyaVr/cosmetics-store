@@ -1,0 +1,472 @@
+<title>Beauty Shop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: one column. Header row has the search + cart group centred; results are a plain product grid. */
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --fg: #2a2733;
+    --muted: #716d7d;
+    --line: #e8e3da;
+    --tile: #f1ede6;
+    --ink: #2a2733;
+    --ink-fg: #ffffff;
+    --accent: #7a69ad;
+    --hover: #f4f0e9;
+    --shadow: 0 1px 2px rgba(40,30,60,.05), 0 8px 24px rgba(40,30,60,.07);
+    --font: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --r: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17161b; --surface: #1f1d25; --fg: #ece9f2; --muted: #a29fae; --line: #302d38; --tile: #2a2732;
+      --ink: #ece9f2; --ink-fg: #17161b; --accent: #b7a9e6; --hover: #2a2732; color-scheme: dark;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17161b; --surface: #1f1d25; --fg: #ece9f2; --muted: #a29fae; --line: #302d38; --tile: #2a2732;
+    --ink: #ece9f2; --ink-fg: #17161b; --accent: #b7a9e6; --hover: #2a2732; color-scheme: dark;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { min-height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0;
+  }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  header { display: grid; grid-template-columns: 1fr minmax(0, 560px) 1fr; align-items: start; gap: 12px; padding-block: 22px; }
+  .brand { font-weight: 700; font-size: 21px; letter-spacing: -0.02em; background: none; border: 0; padding: 8px 0; text-align: left; justify-self: start; }
+  .searchrow { display: flex; gap: 10px; align-items: flex-start; grid-column: 2; }
+  .search { position: relative; flex: 1; min-width: 0; }
+  .search input { width: 100%; height: 48px; padding: 0 18px 0 44px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 15px; box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s; }
+  .search input::placeholder { color: var(--muted); }
+  .search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+  .search svg { position: absolute; left: 16px; top: 14px; width: 20px; height: 20px; stroke: var(--muted); fill: none; stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
+  .suggest { position: absolute; left: 0; right: 0; top: 56px; margin: 0; padding: 6px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); z-index: 5; }
+  .suggest li { padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+  .suggest li[aria-selected="true"] { background: var(--hover); }
+  .suggest .m { font-weight: 400; }
+  .suggest .u { font-weight: 600; }
+  .cartbtn { height: 48px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); font-weight: 500; transition: border-color .15s; }
+  .cartbtn:hover { border-color: var(--accent); }
+  .cartbtn svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .count { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--accent); color: var(--surface); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+  .count[data-n="0"] { background: var(--tile); color: var(--muted); }
+
+  main { padding-block: 24px 80px; }
+  .empty { padding-block: clamp(56px, 12vh, 120px); display: flex; flex-direction: column; align-items: center; gap: 24px; text-align: center; }
+  .empty .badge { width: 88px; height: 88px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; place-items: center; }
+  .empty .badge svg { width: 36px; height: 36px; stroke: var(--accent); fill: none; stroke-width: 1.7; stroke-linecap: round; }
+  .empty h1 { font-size: clamp(28px, 5.5vw, 44px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.15; max-width: 18ch; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+  .n { color: var(--muted); font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+  .card { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 10px 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); transition: box-shadow .15s, border-color .15s; }
+  .card:hover { box-shadow: var(--shadow); }
+  .card > :not(.tile) { margin-inline: 6px; }
+  .tile { position: relative; overflow: hidden; aspect-ratio: 4 / 3; max-width: 100%; background: var(--tile); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 500; }
+  .tile svg { width: 52px; height: 52px; stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--tile); }
+  .card h2 { font-size: 15px; font-weight: 600; line-height: 1.3; margin: 0 6px; }
+  .card .tile + .meta { margin-top: 8px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; min-height: 24px; }
+  .tag { font-size: 12px; background: var(--tile); border-radius: 999px; padding: 2px 10px; color: var(--muted); }
+  .price { font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; margin-top: auto; }
+  .add { margin-top: 6px; height: 40px; border: 1px solid var(--ink); border-radius: 10px; background: var(--ink); color: var(--ink-fg); font-weight: 600; transition: opacity .15s, background .15s; }
+  .add:hover { opacity: .88; }
+  .add.done { background: var(--surface); color: var(--fg); border-color: var(--line); }
+
+  .scrim { position: fixed; inset: 0; background: rgba(25,20,35,.4); z-index: 20; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--surface); border-left: 1px solid var(--line); border-radius: 20px 0 0 20px; box-shadow: var(--shadow); z-index: 21; display: flex; flex-direction: column; padding: max(22px, env(safe-area-inset-top, 0px)) max(22px, env(safe-area-inset-right, 0px)) max(22px, env(safe-area-inset-bottom, 0px)) 22px; }
+  .drawer header { display: flex; grid-template-columns: none; justify-content: space-between; align-items: center; padding: 0 0 14px; }
+  .drawer h2 { margin: 0; font-size: 20px; font-weight: 600; }
+  .x { border: 0; background: none; font-size: 14px; text-decoration: underline; color: var(--muted); }
+  .lines { flex: 1; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+  .line { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .line .nm { font-weight: 500; min-width: 0; }
+  .qty { display: inline-flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; }
+  .qty button { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); }
+  .qty button:hover { border-color: var(--accent); }
+  .total { display: flex; justify-content: space-between; font-weight: 600; font-size: 17px; padding-top: 16px; font-variant-numeric: tabular-nums; }
+  .note { color: var(--muted); padding: 30px 0; }
+
+  footer { border-top: 1px solid var(--line); padding-block: 16px; color: var(--muted); font-size: 12px; }
+  footer button { background: none; border: 0; color: var(--muted); font-size: 12px; text-decoration: underline; padding: 0; }
+  .panel { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: min(440px, calc(100% - 32px)); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; z-index: 30; display: grid; gap: 10px; font-size: 13px; }
+  .panel h3 { margin: 0; font-size: 14px; }
+  .panel label { display: grid; gap: 4px; }
+  .panel select, .panel textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 6px; font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace; color: var(--fg); }
+  .panel textarea { height: 140px; resize: vertical; }
+  .panel .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .panel .row button { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 12px; font-size: 13px; }
+
+  @media (max-width: 720px) {
+    header { grid-template-columns: 1fr; padding-block: 14px; }
+    .brand { padding: 0 0 4px; }
+    .searchrow { grid-column: 1; }
+    .cartbtn .lbl { display: none; }
+    .drawer { border-radius: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <button class="brand" id="brand" type="button">Beauty Shop</button>
+    <div class="searchrow">
+      <div class="search" role="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Search products" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list" aria-label="Search products">
+        <ul class="suggest" id="sug" role="listbox" hidden></ul>
+      </div>
+      <button class="cartbtn" id="cartbtn" type="button" aria-label="Open cart">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>
+        <span class="lbl">Cart</span><span class="count" id="count" data-n="0">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main"></main>
+
+  <footer><button id="rbtn" type="button">Researcher panel</button></footer>
+</div>
+
+<div id="overlay"></div>
+<div id="panelhost"></div>
+
+<script>
+(function () {
+  /* ---------- Data ---------- */
+  var P = function (cat, name, size, price, traits) { return { cat: cat, name: name, size: size, price: price, traits: traits || [] }; };
+  /* NOTE: names are transcribed from the board; sizes and prices are PLACEHOLDERS - replace with the real ones.
+     Products with the 'sus' trait are the Matas Natur (sustainable) ones; the rest are Matas Striber. */
+  var PRODUCTS = [
+    /* Deodorant */
+    P('deodorant','Men Deo Stick for Normal Skin','75 ml',49), P('deodorant','Mild Deo Lotion Roll-on Without Perfume','50 ml',45), P('deodorant','Pomegranate Deo Roll-on','50 ml',45),
+    P('deodorant','Moisturising Deo Spray Without Perfume','100 ml',49), P('deodorant','Deo Roll-on','50 ml',39), P('deodorant','Aloe Vera Deo Roll-on','50 ml',45),
+    P('deodorant','Hyaluron Deo Roll-on','50 ml',45), P('deodorant','Deo Stick','50 g',45), P('deodorant','Deo Cream Without Perfume','50 ml',49), P('deodorant','Citrus Deo Roll-on','50 ml',45),
+    P('deodorant','Nourishing Antiperspirant Deo Roll-On','50 ml',69,['sus']), P('deodorant','Superfruit Goji Berry Antiperspirant Deo Roll-On','50 ml',69,['sus']),
+    /* Face cream */
+    P('facecream','Hydra Intensive Day Cream Without Perfume','50 ml',89), P('facecream','Men 24H Face Cream for Normal Skin','50 ml',79),
+    P('facecream','Mild Day Cream for Sensitive Skin Without Perfume','50 ml',79), P('facecream','Moisturising Lotion for Face Without Perfume','50 ml',69), P('facecream','Cold Cream for Dry Skin Without Perfume','150 ml',99),
+    P('facecream','Firming Day Cream SPF 15 for Dry Skin Without Perfume','50 ml',99), P('facecream','Moisturiser for Normal Skin Without Fragrance','150 ml',89),
+    P('facecream','The Core Hyaluron 24H Face Cream Without Perfume','50 ml',109),
+    P('facecream','Nourishing Day Cream SPF 15','50 ml',129,['sus']), P('facecream','Nourishing 24h Face Cream','50 ml',129,['sus']),
+    /* P('facecream','Intensive Moisture 24H Face Cream','50 ml',129,['sus']),   <- the "do we add this?" product */
+    /* Shampoo */
+    P('shampoo','Volume Shampoo','250 ml',59), P('shampoo','Luxury Shampoo for Normal Hair','500 ml',79),
+    P('shampoo','Luxury Shampoo for Normal Hair Without Perfume','500 ml',79), P('shampoo','Carbamide Shampoo for Dry and Irritated Scalp Without Perfume','500 ml',79), P('shampoo','Dandruff Shampoo Without Perfume','500 ml',79),
+    P('shampoo','Pomegranate Shampoo for Normal Hair','500 ml',69), P('shampoo','Hyaluronic Shampoo','250 ml',65), P('shampoo','Stimulating Shampoo','250 ml',59),
+    P('shampoo','Shampoo for Dry and Damaged Hair Without Perfume','500 ml',69),
+    P('shampoo','Nourishing Shampoo','1000 ml',99,['sus']), P('shampoo','Nourishing Shampoo','400 ml',69,['sus'])
+  ];
+  var nameCount = {};
+  PRODUCTS.forEach(function (p, i) { p.id = i; p.brand = p.traits.indexOf('sus') > -1 ? 'Matas Natur' : 'Matas Striber'; nameCount[p.name] = (nameCount[p.name] || 0) + 1; });
+  var TAGNAME = {};
+  var CATNAME = { shampoo:'Shampoo', deodorant:'Deodorant', facecream:'Face cream' };
+
+  /* Product photos: put them in an "images" folder next to this file, named after the product,
+     e.g. images/halden-daily-shampoo.jpg. Change IMG_EXT if yours are .png or .webp.
+     A product without a matching file simply shows the placeholder icon. */
+  var IMG_DIR = 'images/', IMG_EXT = 'jpg';
+  function slug(n) { return n.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  /* Two products with the same name get their size added to the filename, e.g. nourishing-shampoo-500-ml.jpg */
+  function imgName(p) { return slug(p.name) + (nameCount[p.name] > 1 ? '-' + slug(p.size) : ''); }
+  var ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="19" width="20" height="23" rx="6"/><path d="M20 19v-5h8v5"/><path d="M19 28h10"/></svg>';
+
+  var S = function (label, cat, pop, trait, kw) { return { label: label, cat: cat, pop: pop, trait: trait || null, kw: kw || null, sus: !!trait }; };
+  var CONVENTIONAL = [
+    S('shampoo','shampoo',95), S('deodorant','deodorant',92), S('face cream','facecream',88), S('moisturiser','facecream',66),
+    S('anti-dandruff shampoo','shampoo',84,null,'dandruff'), S('volume shampoo','shampoo',80,null,'volume'), S('luxury shampoo','shampoo',74,null,'luxury'), S('bond repair shampoo','shampoo',70,null,'bond'),
+    S('roll-on deodorant','deodorant',86,null,'roll-on'), S('deodorant spray','deodorant',79,null,'spray'), S('deodorant stick','deodorant',75,null,'stick'), S('aloe vera deodorant','deodorant',68,null,'aloe'),
+    S('hyaluron face cream','facecream',80,null,'hyaluron'), S('face cream with spf','facecream',78,null,'spf'), S('day cream','facecream',76,null,'day cream'),
+    S('face cream for sensitive skin','facecream',72,null,'sensitive'), S('face cream for dry skin','facecream',68,null,'dry skin')
+  ];
+  /* Sustainable cues: shown in conditions 2 and 3 only. All of them lead to the Matas Natur products of that category. */
+  var SUSTAINABLE = [
+    S('plastic free shampoo','shampoo',90,'sus'), S('refillable shampoo','shampoo',78,'sus'), S('sustainable shampoo','shampoo',70,'sus'),
+    S('refillable deodorant','deodorant',89,'sus'), S('plastic free deodorant','deodorant',84,'sus'), S('sustainable deodorant','deodorant',68,'sus'),
+    S('plastic free face cream','facecream',74,'sus'), S('refillable face cream','facecream',70,'sus'), S('sustainable face cream','facecream',66,'sus')
+  ];
+  var CONDITIONS = {
+    c1: { name: 'Condition 1: conventional only' },
+    c2: { name: 'Condition 2: conventional and sustainable, mixed' },
+    c3: { name: 'Condition 3: sustainable options first' }
+  };
+
+  /* ---------- State ---------- */
+  var st = { cond: 'c1', items: [], active: -1, cart: {}, firstKey: null, hoverPos: -1, log: [], panel: false, cartOpen: false, view: null };
+  var $ = function (id) { return document.getElementById(id); };
+  var q = $('q'), sug = $('sug'), main = $('main');
+
+  function logEv(type, data) {
+    var e = { t: Math.round(performance.now()), condition: st.cond, type: type };
+    for (var k in data) e[k] = data[k];
+    st.log.push(e);
+    if (st.panel) refreshLog();
+  }
+
+  /* ---------- Suggestions (QAC) ---------- */
+  function pool() {
+    if (st.cond === 'c1') return CONVENTIONAL;
+    return CONVENTIONAL.concat(SUSTAINABLE);
+  }
+  function tokens(s) { return s.toLowerCase().trim().split(/\s+/).filter(Boolean); }
+  function matchMask(label, toks) {
+    var mask = new Array(label.length).fill(false), ok = true;
+    toks.forEach(function (t) {
+      var found = false, re = /\S+/g, m;
+      while ((m = re.exec(label))) {
+        if (m[0].toLowerCase().indexOf(t) === 0) {
+          for (var i = 0; i < t.length; i++) mask[m.index + i] = true;
+          found = true; break;
+        }
+      }
+      if (!found) ok = false;
+    });
+    return ok ? mask : null;
+  }
+  /* Lets "facecream" match "face cream" */
+  function joinedMask(label, qs) {
+    if (!qs) return null;
+    var re = /\S+/g, m;
+    while ((m = re.exec(label))) {
+      var mask = new Array(label.length).fill(false), qi = 0, k = m.index;
+      while (k < label.length && qi < qs.length) {
+        var ch = label[k].toLowerCase();
+        if (ch === ' ') { k++; continue; }
+        if (ch !== qs[qi]) break;
+        mask[k] = true; qi++; k++;
+      }
+      if (qi === qs.length) return mask;
+    }
+    return null;
+  }
+  function rank(list, toks, qs) {
+    var out = [];
+    list.forEach(function (s) {
+      var mask = matchMask(s.label, toks) || joinedMask(s.label, qs);
+      if (!mask) return;
+      out.push({ s: s, mask: mask, score: (s.label.replace(/\s+/g, '').indexOf(qs) === 0 ? 1000 : 0) + s.pop });
+    });
+    return out.sort(function (a, b) { return b.score - a.score; });
+  }
+  var N_SUG = 5;
+  function suggest(text) {
+    var toks = tokens(text);
+    if (!toks.length) return [];
+    var qs = text.toLowerCase().replace(/\s+/g, '');
+    var conv = rank(CONVENTIONAL, toks, qs);
+    if (st.cond === 'c1') return conv.slice(0, N_SUG);
+    var sus = rank(SUSTAINABLE, toks, qs), set = [], i = 0, j = 0;
+    /* C2 and C3 show the same 5 options: alternate conventional / sustainable */
+    while (set.length < N_SUG && (i < conv.length || j < sus.length)) {
+      if (i < conv.length) set.push(conv[i++]);
+      if (set.length < N_SUG && j < sus.length) set.push(sus[j++]);
+    }
+    if (st.cond === 'c2') return set;
+    /* C3: same set, sustainable ones moved to the top */
+    return set.filter(function (x) { return x.s.sus; }).concat(set.filter(function (x) { return !x.s.sus; }));
+  }
+  function productsFor(s) {
+    return PRODUCTS.filter(function (p) {
+      return p.cat === s.cat && (!s.trait || p.traits.indexOf(s.trait) > -1) && (!s.kw || p.name.toLowerCase().indexOf(s.kw) > -1);
+    });
+  }
+  function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function renderSug() {
+    if (!st.items.length) { sug.hidden = true; q.setAttribute('aria-expanded', 'false'); sug.innerHTML = ''; return; }
+    sug.innerHTML = st.items.map(function (it, i) {
+      var html = '', lab = it.s.label, cur = null, buf = '';
+      for (var k = 0; k < lab.length; k++) {
+        var m = it.mask[k];
+        if (m !== cur) { if (buf) html += '<span class="' + (cur ? 'm' : 'u') + '">' + esc(buf) + '</span>'; buf = ''; cur = m; }
+        buf += lab[k];
+      }
+      if (buf) html += '<span class="' + (cur ? 'm' : 'u') + '">' + esc(buf) + '</span>';
+      return '<li role="option" id="opt' + i + '" data-i="' + i + '" aria-selected="' + (i === st.active) + '">' + html + '</li>';
+    }).join('');
+    sug.hidden = false; q.setAttribute('aria-expanded', 'true');
+  }
+  function setActive(i, fromMouse) {
+    st.active = i;
+    Array.prototype.forEach.call(sug.children, function (li, k) { li.setAttribute('aria-selected', k === i); });
+    if (i >= 0) q.setAttribute('aria-activedescendant', 'opt' + i); else q.removeAttribute('aria-activedescendant');
+    if (fromMouse && i >= 0 && st.hoverPos !== i) {
+      st.hoverPos = i;
+      logEv('hover', { query: q.value, label: st.items[i].s.label, position: i + 1, sustainable: st.items[i].s.sus });
+    }
+  }
+
+  q.addEventListener('input', function () {
+    if (!st.firstKey) st.firstKey = performance.now();
+    st.items = suggest(q.value); st.active = -1; st.hoverPos = -1;
+    renderSug();
+    logEv('suggestions', { query: q.value, shown: st.items.map(function (x) { return x.s.label; }) });
+  });
+  q.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' && st.items.length) { e.preventDefault(); setActive((st.active + 1) % st.items.length); }
+    else if (e.key === 'ArrowUp' && st.items.length) { e.preventDefault(); setActive(st.active <= 0 ? st.items.length - 1 : st.active - 1); }
+    else if (e.key === 'Escape') { st.items = []; renderSug(); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (st.active >= 0) choose(st.active, 'keyboard');
+      else freeText();
+    }
+  });
+  q.addEventListener('focus', function () { if (q.value && !st.items.length) { st.items = suggest(q.value); renderSug(); } });
+  document.addEventListener('mousedown', function (e) {
+    if (!e.target.closest('.search')) { st.items = []; renderSug(); }
+  });
+  sug.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  sug.addEventListener('mouseover', function (e) {
+    var li = e.target.closest('li'); if (li) setActive(+li.dataset.i, true);
+  });
+  sug.addEventListener('click', function (e) {
+    var li = e.target.closest('li'); if (li) choose(+li.dataset.i, 'click');
+  });
+
+  function choose(i, method) {
+    var it = st.items[i];
+    logEv('select', {
+      query: q.value, label: it.s.label, position: i + 1, method: method, sustainable: it.s.sus,
+      shown: st.items.map(function (x) { return x.s.label; }),
+      msSinceFirstKeystroke: st.firstKey ? Math.round(performance.now() - st.firstKey) : null
+    });
+    q.value = it.s.label;
+    st.items = []; renderSug(); q.blur();
+    showResults(it.s.label, productsFor(it.s));
+  }
+  function freeText() {
+    var text = q.value.trim();
+    if (!text) return;
+    var found = suggest(text);
+    logEv('freetext', { query: text, shown: found.map(function (x) { return x.s.label; }), msSinceFirstKeystroke: st.firstKey ? Math.round(performance.now() - st.firstKey) : null });
+    st.items = []; renderSug(); q.blur();
+    if (found.length) {
+      var s = found[0].s;
+      showResults(text, productsFor(s));
+      return;
+    }
+    var toks = tokens(text);
+    showResults(text, PRODUCTS.filter(function (p) {
+      var hay = (p.name + ' ' + CATNAME[p.cat]).toLowerCase();
+      return toks.every(function (t) { return hay.indexOf(t) > -1; });
+    }));
+  }
+
+  /* ---------- Views ---------- */
+  function home() {
+    st.view = null;
+    main.innerHTML = '<div class="empty"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></div><h1>Search for a product to get started.</h1></div>';
+  }
+  function showResults(title, list) {
+    st.view = title;
+    logEv('results', { title: title, count: list.length });
+    var h = '<div class="head"><h1>' + esc(title) + '</h1><span class="n">' + list.length + (list.length === 1 ? ' product' : ' products') + '</span></div>';
+    if (!list.length) { main.innerHTML = h + '<p class="note">No products found. Try another search.</p>'; return; }
+    h += '<div class="grid">' + list.map(function (p) {
+      return '<article class="card"><div class="tile">' + ICON + '<span>' + esc(CATNAME[p.cat]) + '</span><img src="' + IMG_DIR + imgName(p) + '.' + IMG_EXT + '" alt="' + esc(p.name) + '" loading="lazy" onerror="this.remove()"></div>' +
+        '<div class="meta">' + esc(p.brand) + '</div><h2>' + esc(p.name) + '</h2><div class="meta">' + esc(p.size) + '</div>' +
+        '<div class="price">' + p.price + ' kr</div>' +
+        '<button class="add" type="button" data-id="' + p.id + '">Add to cart</button></article>';
+    }).join('') + '</div>';
+    main.innerHTML = h;
+    window.scrollTo(0, 0);
+  }
+  main.addEventListener('click', function (e) {
+    var b = e.target.closest('.add'); if (!b) return;
+    var id = +b.dataset.id, p = PRODUCTS[id];
+    st.cart[id] = (st.cart[id] || 0) + 1;
+    logEv('add_to_cart', { product: p.name, category: p.cat, sustainableProduct: p.traits.indexOf('sus') > -1, searchTitle: st.view });
+    updateCount();
+    b.textContent = 'Added'; b.classList.add('done');
+    setTimeout(function () { b.textContent = 'Add to cart'; b.classList.remove('done'); }, 1200);
+  });
+
+  /* ---------- Cart ---------- */
+  function cartN() { var n = 0; for (var k in st.cart) n += st.cart[k]; return n; }
+  function updateCount() { var n = cartN(); $('count').textContent = n; $('count').dataset.n = n; $('cartbtn').setAttribute('aria-label', 'Open cart, ' + n + ' items'); if (st.cartOpen) renderCart(); }
+  function renderCart() {
+    var ids = Object.keys(st.cart), total = 0;
+    var lines = ids.map(function (id) {
+      var p = PRODUCTS[id], n = st.cart[id]; total += p.price * n;
+      return '<li class="line"><div class="nm">' + esc(p.name) + '<div class="meta">' + esc(p.size) + '</div></div><div class="price">' + (p.price * n) + ' kr</div>' +
+        '<div class="qty"><button type="button" data-a="dec" data-id="' + id + '" aria-label="Remove one">−</button><span>' + n + '</span><button type="button" data-a="inc" data-id="' + id + '" aria-label="Add one">+</button></div>' +
+        '<div></div></li>';
+    }).join('');
+    $('overlay').innerHTML = '<div class="scrim" id="scrim"></div><aside class="drawer" role="dialog" aria-label="Cart">' +
+      '<header><h2>Cart</h2><button class="x" id="closecart" type="button">Close</button></header>' +
+      (ids.length ? '<ul class="lines">' + lines + '</ul><div class="total"><span>Total</span><span>' + total + ' kr</span></div>' : '<p class="note">Your cart is empty.</p>') +
+      '</aside>';
+    var c = $('closecart'); if (c) c.focus();
+  }
+  function openCart() { st.cartOpen = true; renderCart(); logEv('open_cart', { items: cartN() }); }
+  function closeCart() { st.cartOpen = false; $('overlay').innerHTML = ''; $('cartbtn').focus(); }
+  $('cartbtn').addEventListener('click', openCart);
+  $('overlay').addEventListener('click', function (e) {
+    if (e.target.id === 'scrim' || e.target.id === 'closecart') { closeCart(); return; }
+    var b = e.target.closest('button[data-a]'); if (!b) return;
+    var id = b.dataset.id;
+    st.cart[id] += b.dataset.a === 'inc' ? 1 : -1;
+    if (st.cart[id] <= 0) delete st.cart[id];
+    updateCount();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && st.cartOpen) closeCart();
+    if (e.shiftKey && e.altKey && e.key.toLowerCase() === 'r') togglePanel();
+  });
+  $('brand').addEventListener('click', function () { q.value = ''; st.items = []; renderSug(); home(); });
+
+  /* ---------- Researcher panel ---------- */
+  function logText() { return JSON.stringify(st.log, null, 1); }
+  function refreshLog() { var t = $('logout'); if (t) { t.value = logText(); $('logn').textContent = st.log.length + ' events'; } }
+  function togglePanel() {
+    st.panel = !st.panel;
+    if (!st.panel) { $('panelhost').innerHTML = ''; return; }
+    $('panelhost').innerHTML = '<section class="panel" aria-label="Researcher panel"><h3>Researcher panel</h3>' +
+      '<label>Condition<select id="condsel">' + Object.keys(CONDITIONS).map(function (k) { return '<option value="' + k + '"' + (k === st.cond ? ' selected' : '') + '>' + CONDITIONS[k].name + '</option>'; }).join('') + '</select></label>' +
+      '<div>Link for participants: add <code>#c1</code>, <code>#c2</code> or <code>#c3</code> to the page address.</div>' +
+      '<label>Interaction log <span id="logn"></span><textarea id="logout" readonly></textarea></label>' +
+      '<div class="row"><button type="button" id="copylog">Copy log</button><button type="button" id="clearlog">Clear log and cart</button><button type="button" id="closepanel">Close</button></div></section>';
+    refreshLog();
+    $('condsel').addEventListener('change', function (e) { location.hash = e.target.value; });
+    $('copylog').addEventListener('click', function () {
+      var t = $('logout'), done = function () { $('copylog').textContent = 'Copied'; setTimeout(function () { var b = $('copylog'); if (b) b.textContent = 'Copy log'; }, 1200); };
+      try { navigator.clipboard.writeText(logText()).then(done, function () { t.select(); }); } catch (err) { t.select(); }
+    });
+    $('clearlog').addEventListener('click', function () { st.log = []; st.cart = {}; updateCount(); refreshLog(); });
+    $('closepanel').addEventListener('click', togglePanel);
+  }
+  $('rbtn').addEventListener('click', togglePanel);
+
+  /* ---------- Condition routing ---------- */
+  function applyHash() {
+    var h = (location.hash || '').replace('#', '');
+    var c = CONDITIONS[h] ? h : 'c1';
+    var changed = c !== st.cond;
+    st.cond = c;
+    if (changed) { q.value = ''; st.items = []; st.firstKey = null; renderSug(); home(); }
+    var s = $('condsel'); if (s) s.value = c;
+    logEv('condition_set', { value: c });
+  }
+  window.addEventListener('hashchange', applyHash);
+  home();
+  applyHash();
+})();
+</script>
