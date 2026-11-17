@@ -1,8 +1,9 @@
-<title>Beauty Shop</title>
+<title>Cosmetics store</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>document.documentElement.dataset.theme = "light";</script>
 <style>
   /* Layout: one column. Header row has the search + cart group centred; results are a plain product grid. */
   :root {
@@ -60,6 +61,8 @@
   .suggest li[aria-selected="true"] { background: var(--hover); }
   .suggest .m { font-weight: 400; }
   .suggest .u { font-weight: 600; }
+  .suggest .swan-suggestion { display: inline-flex; align-items: center; gap: 8px; }
+  .suggest .swan-suggestion img { width: 20px; height: 20px; object-fit: contain; }
   .cartbtn { height: 48px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); font-weight: 500; transition: border-color .15s; }
   .cartbtn:hover { border-color: var(--accent); }
   .cartbtn svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -80,10 +83,11 @@
   .card > :not(.tile) { margin-inline: 6px; }
   .tile { position: relative; overflow: hidden; aspect-ratio: 4 / 3; max-width: 100%; background: var(--tile); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 500; }
   .tile svg { width: 52px; height: 52px; stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--tile); }
+  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #f8f8fa; }
   .card h2 { font-size: 15px; font-weight: 600; line-height: 1.3; margin: 0 6px; }
   .card .tile + .meta { margin-top: 8px; }
   .meta { color: var(--muted); font-size: 13px; }
+  .eco-label { width: 18px; height: 18px; margin-left: 6px; object-fit: contain; vertical-align: middle; }
   .tags { display: flex; gap: 6px; flex-wrap: wrap; min-height: 24px; }
   .tag { font-size: 12px; background: var(--tile); border-radius: 999px; padding: 2px 10px; color: var(--muted); }
   .price { font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; margin-top: auto; }
@@ -127,7 +131,7 @@
 
 <div class="wrap">
   <header>
-    <button class="brand" id="brand" type="button">Beauty Shop</button>
+    <button class="brand" id="brand" type="button">Cosmetics store</button>
     <div class="searchrow">
       <div class="search" role="search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
@@ -189,7 +193,7 @@
   function imgName(p) { return slug(p.name) + (nameCount[p.name] > 1 ? '-' + slug(p.size) : ''); }
   var ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="19" width="20" height="23" rx="6"/><path d="M20 19v-5h8v5"/><path d="M19 28h10"/></svg>';
 
-  var S = function (label, cat, pop, trait, kw) { return { label: label, cat: cat, pop: pop, trait: trait || null, kw: kw || null, sus: !!trait }; };
+  var S = function (label, cat, pop, trait, kw, icon, display) { return { label: label, cat: cat, pop: pop, trait: trait || null, kw: kw || null, sus: !!trait, icon: icon || null, display: display || null }; };
   var CONVENTIONAL = [
     S('shampoo','shampoo',95), S('deodorant','deodorant',92), S('face cream','facecream',88), S('moisturiser','facecream',66),
     S('anti-dandruff shampoo','shampoo',84,null,'dandruff'), S('volume shampoo','shampoo',80,null,'volume'), S('luxury shampoo','shampoo',74,null,'luxury'), S('bond repair shampoo','shampoo',70,null,'bond'),
@@ -197,16 +201,21 @@
     S('hyaluron face cream','facecream',80,null,'hyaluron'), S('face cream with spf','facecream',78,null,'spf'), S('day cream','facecream',76,null,'day cream'),
     S('face cream for sensitive skin','facecream',72,null,'sensitive'), S('face cream for dry skin','facecream',68,null,'dry skin')
   ];
-  /* Sustainable cues: shown in conditions 2 and 3 only. All of them lead to the Matas Natur products of that category. */
+  /* Sustainable cues lead to the Matas Natur products of their category. */
   var SUSTAINABLE = [
     S('plastic free shampoo','shampoo',90,'sus'), S('refillable shampoo','shampoo',78,'sus'), S('sustainable shampoo','shampoo',70,'sus'),
     S('refillable deodorant','deodorant',89,'sus'), S('plastic free deodorant','deodorant',84,'sus'), S('sustainable deodorant','deodorant',68,'sus'),
     S('plastic free face cream','facecream',74,'sus'), S('refillable face cream','facecream',70,'sus'), S('sustainable face cream','facecream',66,'sus')
   ];
+  var SUSTAINABLE_C3 = [
+    S('Nordic Swan label shampoo','shampoo',90,'sus',null,'swan-logo.svg','shampoo'),
+    S('Nordic Swan label deodorant','deodorant',89,'sus',null,'swan-logo.svg','deodorant'),
+    S('Nordic Swan label face cream','facecream',74,'sus',null,'swan-logo.svg','face cream')
+  ];
   var CONDITIONS = {
     c1: { name: 'Condition 1: conventional only' },
     c2: { name: 'Condition 2: conventional and sustainable, mixed' },
-    c3: { name: 'Condition 3: sustainable options first' }
+    c3: { name: 'Condition 3: mixed with Nordic Swan label' }
   };
 
   /* ---------- State ---------- */
@@ -222,9 +231,10 @@
   }
 
   /* ---------- Suggestions (QAC) ---------- */
+  function sustainableOptions() { return st.cond === 'c3' ? SUSTAINABLE_C3 : SUSTAINABLE; }
   function pool() {
     if (st.cond === 'c1') return CONVENTIONAL;
-    return CONVENTIONAL.concat(SUSTAINABLE);
+    return CONVENTIONAL.concat(sustainableOptions());
   }
   function tokens(s) { return s.toLowerCase().trim().split(/\s+/).filter(Boolean); }
   function matchMask(label, toks) {
@@ -273,15 +283,13 @@
     var qs = text.toLowerCase().replace(/\s+/g, '');
     var conv = rank(CONVENTIONAL, toks, qs);
     if (st.cond === 'c1') return conv.slice(0, N_SUG);
-    var sus = rank(SUSTAINABLE, toks, qs), set = [], i = 0, j = 0;
-    /* C2 and C3 show the same 5 options: alternate conventional / sustainable */
+    var sus = rank(sustainableOptions(), toks, qs), set = [], i = 0, j = 0;
+    /* Conditions 2 and 3 alternate conventional and sustainable options. */
     while (set.length < N_SUG && (i < conv.length || j < sus.length)) {
       if (i < conv.length) set.push(conv[i++]);
       if (set.length < N_SUG && j < sus.length) set.push(sus[j++]);
     }
-    if (st.cond === 'c2') return set;
-    /* C3: same set, sustainable ones moved to the top */
-    return set.filter(function (x) { return x.s.sus; }).concat(set.filter(function (x) { return !x.s.sus; }));
+    return set;
   }
   function productsFor(s) {
     return PRODUCTS.filter(function (p) {
@@ -293,12 +301,16 @@
     if (!st.items.length) { sug.hidden = true; q.setAttribute('aria-expanded', 'false'); sug.innerHTML = ''; return; }
     sug.innerHTML = st.items.map(function (it, i) {
       var html = '', lab = it.s.label, cur = null, buf = '';
-      for (var k = 0; k < lab.length; k++) {
-        var m = it.mask[k];
-        if (m !== cur) { if (buf) html += '<span class="' + (cur ? 'm' : 'u') + '">' + esc(buf) + '</span>'; buf = ''; cur = m; }
-        buf += lab[k];
+      if (it.s.icon) {
+        html = '<span class="swan-suggestion"><span>' + esc(it.s.display) + '</span><img src="' + IMG_DIR + esc(it.s.icon) + '" alt="Nordic Swan Ecolabel"></span>';
+      } else {
+        for (var k = 0; k < lab.length; k++) {
+          var m = it.mask[k];
+          if (m !== cur) { if (buf) html += '<span class="' + (cur ? 'm' : 'u') + '">' + esc(buf) + '</span>'; buf = ''; cur = m; }
+          buf += lab[k];
+        }
+        if (buf) html += '<span class="' + (cur ? 'm' : 'u') + '">' + esc(buf) + '</span>';
       }
-      if (buf) html += '<span class="' + (cur ? 'm' : 'u') + '">' + esc(buf) + '</span>';
       return '<li role="option" id="opt' + i + '" data-i="' + i + '" aria-selected="' + (i === st.active) + '">' + html + '</li>';
     }).join('');
     sug.hidden = false; q.setAttribute('aria-expanded', 'true');
@@ -381,8 +393,10 @@
     var h = '<div class="head"><h1>' + esc(title) + '</h1><span class="n">' + list.length + (list.length === 1 ? ' product' : ' products') + '</span></div>';
     if (!list.length) { main.innerHTML = h + '<p class="note">No products found. Try another search.</p>'; return; }
     h += '<div class="grid">' + list.map(function (p) {
+      var hasSwan = st.cond === 'c3' && p.traits.indexOf('sus') > -1;
       return '<article class="card"><div class="tile">' + ICON + '<span>' + esc(CATNAME[p.cat]) + '</span><img src="' + IMG_DIR + imgName(p) + '.' + IMG_EXT + '" alt="' + esc(p.name) + '" loading="lazy" onerror="this.remove()"></div>' +
-        '<div class="meta">' + esc(p.brand) + '</div><h2>' + esc(p.name) + '</h2><div class="meta">' + esc(p.size) + '</div>' +
+        '<div class="meta">' + esc(p.brand) + '</div>' +
+        '<h2>' + esc(p.name) + (hasSwan ? '<img class="eco-label" src="' + IMG_DIR + 'swan-logo.svg" alt="Nordic Swan Ecolabel">' : '') + '</h2><div class="meta">' + esc(p.size) + '</div>' +
         '<div class="price">' + p.price + ' kr</div>' +
         '<button class="add" type="button" data-id="' + p.id + '">Add to cart</button></article>';
     }).join('') + '</div>';
