@@ -161,23 +161,41 @@
      Products with the 'sus' trait are the Matas Natur (sustainable) ones; the rest are Matas Striber. */
   var PRODUCTS = [
     /* Deodorant */
-    P('deodorant','Men Deo Stick for Normal Skin','75 ml',49), P('deodorant','Mild Deo Lotion Roll-on Without Perfume','50 ml',45), P('deodorant','Pomegranate Deo Roll-on','50 ml',45),
-    P('deodorant','Moisturising Deo Spray Without Perfume','100 ml',49), P('deodorant','Deo Roll-on','50 ml',39), P('deodorant','Aloe Vera Deo Roll-on','50 ml',45),
-    P('deodorant','Hyaluron Deo Roll-on','50 ml',45), P('deodorant','Deo Stick','50 g',45), P('deodorant','Deo Cream Without Perfume','50 ml',49), P('deodorant','Citrus Deo Roll-on','50 ml',45),
-    P('deodorant','Nourishing Antiperspirant Deo Roll-On','50 ml',69,['sus']), P('deodorant','Superfruit Goji Berry Antiperspirant Deo Roll-On','50 ml',69,['sus']),
+    P('deodorant','Moisturizing Deo Roll-on','75 ml',30),
+    P('deodorant','Deodorant Cream Fragrance Free','75 ml',65,['sus']),
+    P('deodorant','Pomegranate Deo Roll-on','75 ml',30),
+    P('deodorant','Nourishing Antiperspirant Deo Roll-On','75 g',65,['sus']),
+    P('deodorant','Citrus Deo Roll-on','75 ml',30),
+    P('deodorant','Nourishing Antiperspirant Deo Roll-On Refillable','75 ml',65,['sus']),
+    P('deodorant','Aloe Vera Deo Roll-on','75 ml',30),
+    P('deodorant','Nourishing Antiperspirant Deo Roll-on Eco-Friendly','75 ml',65,['sus']),
+    P('deodorant','Aloe Vera Deocreme','75 ml',30),
+    P('deodorant','Deodorant Cream Eco-Friendly','75 ml',65,['sus']),
+    
     /* Face cream */
-    P('facecream','Hydra Intensive Day Cream Without Perfume','50 ml',89), P('facecream','Men 24H Face Cream for Normal Skin','50 ml',79),
-    P('facecream','Mild Day Cream for Sensitive Skin Without Perfume','50 ml',79), P('facecream','Moisturising Lotion for Face Without Perfume','50 ml',69), P('facecream','Cold Cream for Dry Skin Without Perfume','150 ml',99),
-    P('facecream','Firming Day Cream SPF 15 for Dry Skin Without Perfume','50 ml',99), P('facecream','Moisturiser for Normal Skin Without Fragrance','150 ml',89),
-    P('facecream','The Core Hyaluron 24H Face Cream Without Perfume','50 ml',109),
-    P('facecream','Nourishing Day Cream SPF 15','50 ml',129,['sus']), P('facecream','Nourishing 24h Face Cream','50 ml',129,['sus']),
-    /* P('facecream','Intensive Moisture 24H Face Cream','50 ml',129,['sus']),   <- the "do we add this?" product */
+    P('facecream','Cold Cream for Dry Skin Without Perfume','50 ml',70),
+    P('facecream','The Core Hyaluron 24H Face Cream Without Perfume','50 ml',70),
+    P('facecream','Nourishing Day Cream SPF 15','50 ml',100,['sus']),
+    P('facecream','Summer Glow Face Cream','50 ml',70),
+    P('facecream','Nourishing 24h Face Cream','50 ml',100,['sus']),
+    P('facecream','Nourishing 24h Face Cream Refillable','50 ml',100,['sus']),
+    P('facecream','Firming Day Cream SPF 15 for Dry Skin Without Perfume','50 ml',70),
+    P('facecream','Nourishing 24H Face Cream Eco-Friendly','50 ml',100,['sus']),
+    P('facecream','The Core Niacinamide 24H Face Cream Without Fragrance','50 ml',70),
+    P('facecream','Moisturizing Lotion for Face Without Perfume','50 ml',70,['sus']),
+    
     /* Shampoo */
-    P('shampoo','Volume Shampoo','250 ml',59), P('shampoo','Luxury Shampoo for Normal Hair','500 ml',79),
-    P('shampoo','Luxury Shampoo for Normal Hair Without Perfume','500 ml',79), P('shampoo','Carbamide Shampoo for Dry and Irritated Scalp Without Perfume','500 ml',79), P('shampoo','Dandruff Shampoo Without Perfume','500 ml',79),
-    P('shampoo','Pomegranate Shampoo for Normal Hair','500 ml',69), P('shampoo','Hyaluronic Shampoo','250 ml',65), P('shampoo','Stimulating Shampoo','250 ml',59),
-    P('shampoo','Shampoo for Dry and Damaged Hair Without Perfume','500 ml',69),
-    P('shampoo','Nourishing Shampoo','1000 ml',99,['sus']), P('shampoo','Nourishing Shampoo','400 ml',69,['sus'])
+    P('shampoo','Volume Shampoo','500 ml',62),
+    P('shampoo','Plastic Free Shampoo','500 ml',100,['sus']),
+    P('shampoo','Bond Repair Shampoo Without Perfume','500 ml',62),
+    P('shampoo','Carbamide Shampoo for Dry and Irritated Scalp Without Perfume','500 ml',62),
+    P('shampoo','Nourishing Shampoo','500 ml',100,['sus']),
+    P('shampoo','Anti-Dandruff Shampoo Without Perfume','500 ml',62),
+    P('shampoo','Nourishing Shampoo Refillable','500 ml',100,['sus']),
+    P('shampoo','Pomegranate Shampoo for Normal Hair','500 ml',62),
+    P('shampoo','Mild Shampoo for Normal Hair Without Perfume','500 ml',100,['sus']),
+    P('shampoo','Eco-friendly Shampoo','500 ml',100,['sus']),
+    
   ];
   var nameCount = {};
   PRODUCTS.forEach(function (p, i) { p.id = i; p.brand = p.traits.indexOf('sus') > -1 ? 'Matas Natur' : 'Matas Striber'; nameCount[p.name] = (nameCount[p.name] || 0) + 1; });
@@ -194,24 +212,31 @@
   var ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="19" width="20" height="23" rx="6"/><path d="M20 19v-5h8v5"/><path d="M19 28h10"/></svg>';
 
   var S = function (label, cat, pop, trait, kw, icon, display) { return { label: label, cat: cat, pop: pop, trait: trait || null, kw: kw || null, sus: !!trait, icon: icon || null, display: display || null }; };
-  var CONVENTIONAL = [
-    S('shampoo','shampoo',95), S('deodorant','deodorant',92), S('face cream','facecream',88), S('moisturiser','facecream',66),
-    S('anti-dandruff shampoo','shampoo',84,null,'dandruff'), S('volume shampoo','shampoo',80,null,'volume'), S('luxury shampoo','shampoo',74,null,'luxury'), S('bond repair shampoo','shampoo',70,null,'bond'),
-    S('roll-on deodorant','deodorant',86,null,'roll-on'), S('deodorant spray','deodorant',79,null,'spray'), S('deodorant stick','deodorant',75,null,'stick'), S('aloe vera deodorant','deodorant',68,null,'aloe'),
-    S('hyaluron face cream','facecream',80,null,'hyaluron'), S('face cream with spf','facecream',78,null,'spf'), S('day cream','facecream',76,null,'day cream'),
-    S('face cream for sensitive skin','facecream',72,null,'sensitive'), S('face cream for dry skin','facecream',68,null,'dry skin')
-  ];
-  /* Sustainable cues lead to the Matas Natur products of their category. */
-  var SUSTAINABLE = [
-    S('plastic free shampoo','shampoo',90,'sus'), S('refillable shampoo','shampoo',78,'sus'), S('sustainable shampoo','shampoo',70,'sus'),
-    S('refillable deodorant','deodorant',89,'sus'), S('plastic free deodorant','deodorant',84,'sus'), S('sustainable deodorant','deodorant',68,'sus'),
-    S('plastic free face cream','facecream',74,'sus'), S('refillable face cream','facecream',70,'sus'), S('sustainable face cream','facecream',66,'sus')
-  ];
-  var SUSTAINABLE_C3 = [
-    S('Nordic Swan label shampoo','shampoo',90,'sus',null,'swan-logo.svg','shampoo'),
-    S('Nordic Swan label deodorant','deodorant',89,'sus',null,'swan-logo.svg','deodorant'),
-    S('Nordic Swan label face cream','facecream',74,'sus',null,'swan-logo.svg','face cream')
-  ];
+  /* ---------- Suggestions (QAC): one fixed list per category and condition ----------
+     C = conventional cue, X = sustainable text cue, E = conventional text plus the Nordic Swan label shown as an image.
+     The order below is the order participants see. Every suggestion leads to the products of its category;
+     X and E lead to the sustainable (Matas Natur) products, and C narrows by the keyword (kw) found in the product name. */
+  var C = function (cat, label, kw) { return S(label, cat, 0, null, kw); };
+  var X = function (cat, label) { return S(label, cat, 0, 'sus'); };
+  var E = function (cat, display) { return S(display + ' + eco label', cat, 0, 'sus', null, 'swan-logo.svg', display); };
+  var CAT_ORDER = ['shampoo', 'facecream', 'deodorant'];
+  var QAC = {
+    shampoo: {
+      c1: [C('shampoo','shampoo'), C('shampoo','anti-dandruff shampoo','dandruff'), C('shampoo','volume shampoo','volume'), C('shampoo','shampoo for dry scalp','scalp'), C('shampoo','bond repair shampoo','bond')],
+      c2: [C('shampoo','shampoo'), X('shampoo','plastic-free shampoo'), C('shampoo','anti-dandruff shampoo','dandruff'), X('shampoo','refillable shampoo'), C('shampoo','volume shampoo','volume')],
+      c3: [C('shampoo','shampoo'), E('shampoo','shampoo'), C('shampoo','anti-dandruff shampoo','dandruff'), C('shampoo','volume shampoo','volume'), C('shampoo','bond repair shampoo','bond')]
+    },
+    facecream: {
+      c1: [C('facecream','face cream'), C('facecream','face cream with spf','spf'), C('facecream','hydrating face cream','hydra'), C('facecream','face cream for oily skin','oily'), C('facecream','face cream for sensitive skin','sensitive')],
+      c2: [C('facecream','face cream'), X('facecream','plastic-free face cream'), C('facecream','face cream with spf','spf'), X('facecream','refillable face cream'), C('facecream','hydrating face cream','hydra')],
+      c3: [C('facecream','face cream'), E('facecream','face cream'), C('facecream','face cream with spf','spf'), C('facecream','face cream for oily skin','oily'), C('facecream','hydrating face cream','hydra')]
+    },
+    deodorant: {
+      c1: [C('deodorant','deodorant'), C('deodorant','deodorant spray','spray'), C('deodorant','deodorant stick','stick'), C('deodorant','roll-on deodorant','roll-on'), C('deodorant','aloe vera deodorant','aloe')],
+      c2: [C('deodorant','deodorant'), X('deodorant','natural deodorant'), C('deodorant','deodorant spray','spray'), X('deodorant','plastic-free deodorant'), C('deodorant','deodorant stick','stick')],
+      c3: [C('deodorant','deodorant'), E('deodorant','deodorant'), C('deodorant','deodorant spray','spray'), C('deodorant','aloe vera deodorant','aloe'), C('deodorant','roll-on deodorant','roll-on')]
+    }
+  };
   var CONDITIONS = {
     c1: { name: 'Condition 1: conventional only' },
     c2: { name: 'Condition 2: conventional and sustainable, mixed' },
@@ -231,11 +256,6 @@
   }
 
   /* ---------- Suggestions (QAC) ---------- */
-  function sustainableOptions() { return st.cond === 'c3' ? SUSTAINABLE_C3 : SUSTAINABLE; }
-  function pool() {
-    if (st.cond === 'c1') return CONVENTIONAL;
-    return CONVENTIONAL.concat(sustainableOptions());
-  }
   function tokens(s) { return s.toLowerCase().trim().split(/\s+/).filter(Boolean); }
   function matchMask(label, toks) {
     var mask = new Array(label.length).fill(false), ok = true;
@@ -267,34 +287,31 @@
     }
     return null;
   }
-  function rank(list, toks, qs) {
-    var out = [];
-    list.forEach(function (s) {
-      var mask = matchMask(s.label, toks) || joinedMask(s.label, qs);
-      if (!mask) return;
-      out.push({ s: s, mask: mask, score: (s.label.replace(/\s+/g, '').indexOf(qs) === 0 ? 1000 : 0) + s.pop });
-    });
-    return out.sort(function (a, b) { return b.score - a.score; });
-  }
-  var N_SUG = 5;
+  /* The typed text decides which category's list is shown; the list keeps its designed order,
+     minus any entries that do not match what was typed. */
   function suggest(text) {
     var toks = tokens(text);
     if (!toks.length) return [];
-    var qs = text.toLowerCase().replace(/\s+/g, '');
-    var conv = rank(CONVENTIONAL, toks, qs);
-    if (st.cond === 'c1') return conv.slice(0, N_SUG);
-    var sus = rank(sustainableOptions(), toks, qs), set = [], i = 0, j = 0;
-    /* Conditions 2 and 3 alternate conventional and sustainable options. */
-    while (set.length < N_SUG && (i < conv.length || j < sus.length)) {
-      if (i < conv.length) set.push(conv[i++]);
-      if (set.length < N_SUG && j < sus.length) set.push(sus[j++]);
-    }
-    return set;
+    var qs = text.toLowerCase().replace(/\s+/g, ''), best = null;
+    CAT_ORDER.forEach(function (cat) {
+      var hits = [], score = 0;
+      QAC[cat][st.cond].forEach(function (s, idx) {
+        var mask = matchMask(s.label, toks) || joinedMask(s.label, qs);
+        if (!mask) return;
+        hits.push({ s: s, mask: mask });
+        var sc = (s.label.replace(/\s+/g, '').indexOf(qs) === 0 ? 1000 : 0) + (10 - idx);
+        if (sc > score) score = sc;
+      });
+      if (hits.length && (!best || score > best.score)) best = { score: score, hits: hits };
+    });
+    return best ? best.hits : [];
   }
   function productsFor(s) {
-    return PRODUCTS.filter(function (p) {
+    var list = PRODUCTS.filter(function (p) {
       return p.cat === s.cat && (!s.trait || p.traits.indexOf(s.trait) > -1) && (!s.kw || p.name.toLowerCase().indexOf(s.kw) > -1);
     });
+    /* No product carries that keyword (e.g. "oily skin", "bond repair"): show the whole category rather than an empty page. */
+    return list.length ? list : PRODUCTS.filter(function (p) { return p.cat === s.cat; });
   }
   function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function renderSug() {
@@ -360,9 +377,10 @@
       shown: st.items.map(function (x) { return x.s.label; }),
       msSinceFirstKeystroke: st.firstKey ? Math.round(performance.now() - st.firstKey) : null
     });
-    q.value = it.s.label;
+    var shownText = it.s.display || it.s.label;
+    q.value = shownText;
     st.items = []; renderSug(); q.blur();
-    showResults(it.s.label, productsFor(it.s));
+    showResults(shownText, productsFor(it.s));
   }
   function freeText() {
     var text = q.value.trim();
