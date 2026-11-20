@@ -123,6 +123,7 @@
   .panel label { display: grid; gap: 4px; }
   .panel select, .panel textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 6px; font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace; color: var(--fg); }
   .panel textarea { height: 140px; resize: vertical; }
+  .panel .logstatus { overflow-wrap: anywhere; color: var(--muted); }
   .panel .row { display: flex; gap: 8px; flex-wrap: wrap; }
   .panel .row button { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 12px; font-size: 13px; }
 
@@ -251,15 +252,139 @@
   };
 
   /* ---------- State ---------- */
-  var st = { cond: 'c1', items: [], active: -1, cart: {}, firstKey: null, hoverPos: -1, log: [], panel: false, cartOpen: false, view: null };
+  var LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwYbws1xzyIkWwFCjJ-MXPKgDxu7mwediHNznRXbwCEdRfn_ADSITzwZsTYzUOcnpFA/exec';
+  var PARTICIPANT_KEY = 'cosmetics-participant-id-v1';
+  var SESSION_KEY = 'cosmetics-session-id-v1';
+  var SESSION_START_KEY = 'cosmetics-session-start-v1';
+  var LOG_KEY = 'cosmetics-events-v1';
+  var PENDING_KEY = 'cosmetics-pending-events-v1';
+  var storageStatus = '';
+  function makeId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+  }
+  function loadId(storage, key) {
+    try {
+      var id = storage.getItem(key);
+      if (!id) { id = makeId(); storage.setItem(key, id); }
+      return id;
+    } catch (error) {
+      storageStatus = 'Browser storage is unavailable; participant/session IDs may not persist.';
+      console.error(storageStatus, error);
+      return makeId();
+    }
+  }
+  function loadStoredArray(key) {
+    try {
+      var value = sessionStorage.getItem(key);
+      if (!value) return [];
+      var parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+      throw new Error('Stored event data is not an array.');
+    } catch (error) {
+      storageStatus = 'Saved browser log could not be read; see the browser console.';
+      console.error(storageStatus, error);
+      return [];
+    }
+  }
+  function readSessionValue(key) {
+    try {
+      return sessionStorage.getItem(key);
+    } catch (error) {
+      storageStatus = 'Browser session storage is unavailable; logs may not persist after refresh.';
+      console.error(storageStatus, error);
+      return null;
+    }
+  }
+  function writeSessionValue(key, value) {
+    try {
+      sessionStorage.setItem(key, value);
+      return true;
+    } catch (error) {
+      storageStatus = 'Could not save session details in browser storage.';
+      console.error(storageStatus, error);
+      return false;
+    }
+  }
+  var participantId = loadId(localStorage, PARTICIPANT_KEY);
+  var sessionId = loadId(sessionStorage, SESSION_KEY);
+  var isNewSession = !readSessionValue(SESSION_START_KEY);
+  var sessionStartedAt = Number(readSessionValue(SESSION_START_KEY));
+  if (!sessionStartedAt) {
+    sessionStartedAt = Date.now();
+    writeSessionValue(SESSION_START_KEY, String(sessionStartedAt));
+  }
+  var st = {
+    cond: 'c1', items: [], active: -1, cart: {}, firstKey: null, hoverPos: -1,
+    log: loadStoredArray(LOG_KEY), pending: loadStoredArray(PENDING_KEY),
+    panel: false, cartOpen: false, view: null, uploading: false, retryDelay: 1000
+  };
   var $ = function (id) { return document.getElementById(id); };
   var q = $('q'), sug = $('sug'), main = $('main');
 
+  function saveStoredArray(key, value) {
+    return writeSessionValue(key, JSON.stringify(value));
+  }
+  function updateUploadStatus(message) {
+    var status = $('uploadstatus');
+    if (status) status.textContent = message;
+  }
+  function flushLogQueue() {
+    if (!LOG_ENDPOINT) {
+      updateUploadStatus(storageStatus || 'Upload endpoint is not configured; events are saved in this tab only.');
+      return;
+    }
+    if (st.uploading || !st.pending.length) return;
+    st.uploading = true;
+    var batch = st.pending.slice(0, 25);
+    var failed = false;
+    updateUploadStatus('Sending ' + batch.length + ' event(s)…');
+    fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ events: batch }),
+      keepalive: true
+    }).then(function () {
+      var sentIds = {};
+      batch.forEach(function (event) { sentIds[event.event_id] = true; });
+      st.pending = st.pending.filter(function (event) { return !sentIds[event.event_id]; });
+      saveStoredArray(PENDING_KEY, st.pending);
+      st.retryDelay = 1000;
+      updateUploadStatus('Upload request sent for ' + batch.length + ' event(s). Check the Sheet to confirm receipt.');
+    }).catch(function (error) {
+      failed = true;
+      console.error('Event upload failed; events remain queued for retry.', error);
+      updateUploadStatus('Upload failed; events remain queued and will retry.');
+      setTimeout(flushLogQueue, st.retryDelay);
+      st.retryDelay = Math.min(30000, st.retryDelay * 2);
+    }).then(function () {
+      st.uploading = false;
+      if (!failed && st.pending.length) flushLogQueue();
+    });
+  }
+  window.addEventListener('online', flushLogQueue);
+
   function logEv(type, data) {
-    var e = { t: Math.round(performance.now()), condition: st.cond, type: type };
+    var e = {
+      event_id: makeId(),
+      participant_id: participantId,
+      session_id: sessionId,
+      timestamp: new Date().toISOString(),
+      elapsed_ms: Math.max(0, Date.now() - sessionStartedAt),
+      condition: st.cond,
+      type: type
+    };
     for (var k in data) e[k] = data[k];
     st.log.push(e);
+    st.pending.push(e);
+    saveStoredArray(LOG_KEY, st.log);
+    saveStoredArray(PENDING_KEY, st.pending);
     if (st.panel) refreshLog();
+    flushLogQueue();
   }
 
   /* ---------- Suggestions (QAC) ---------- */
@@ -414,7 +539,11 @@
   }
   function showResults(title, list) {
     st.view = title;
-    logEv('results', { title: title, count: list.length });
+    logEv('results', {
+      title: title,
+      count: list.length,
+      products: list.map(function (p) { return { id: p.id, name: p.name, category: p.cat, sustainable: p.traits.indexOf('sus') > -1 }; })
+    });
     var h = '<div class="head"><h1>' + esc(title) + '</h1><span class="n">' + list.length + (list.length === 1 ? ' product' : ' products') + '</span></div>';
     if (!list.length) { main.innerHTML = h + '<p class="note">No products found. Try another search.</p>'; return; }
     h += '<div class="grid">' + list.map(function (p) {
@@ -432,7 +561,10 @@
     var b = e.target.closest('.add'); if (!b) return;
     var id = +b.dataset.id, p = PRODUCTS[id];
     st.cart[id] = (st.cart[id] || 0) + 1;
-    logEv('add_to_cart', { product: p.name, category: p.cat, sustainableProduct: p.traits.indexOf('sus') > -1, searchTitle: st.view });
+    logEv('add_to_cart', {
+      product_id: p.id, product: p.name, category: p.cat, sustainableProduct: p.traits.indexOf('sus') > -1,
+      searchTitle: st.view, quantity: st.cart[id], price: p.price
+    });
     updateCount();
     b.textContent = 'Added'; b.classList.add('done');
     setTimeout(function () { b.textContent = 'Add to cart'; b.classList.remove('done'); }, 1200);
@@ -464,6 +596,12 @@
     var id = b.dataset.id;
     st.cart[id] += b.dataset.a === 'inc' ? 1 : -1;
     if (st.cart[id] <= 0) delete st.cart[id];
+    logEv('cart_quantity_change', {
+      action: b.dataset.a,
+      product_id: +id,
+      product: PRODUCTS[id].name,
+      quantity: st.cart[id] || 0
+    });
     updateCount();
   });
   document.addEventListener('keydown', function (e) {
@@ -481,15 +619,27 @@
     $('panelhost').innerHTML = '<section class="panel" aria-label="Researcher panel"><h3>Researcher panel</h3>' +
       '<label>Condition<select id="condsel">' + Object.keys(CONDITIONS).map(function (k) { return '<option value="' + k + '"' + (k === st.cond ? ' selected' : '') + '>' + CONDITIONS[k].name + '</option>'; }).join('') + '</select></label>' +
       '<div>Link for participants: add <code>#c1</code>, <code>#c2</code> or <code>#c3</code> to the page address.</div>' +
+      '<div>Participant ID: <code>' + participantId + '</code></div>' +
+      '<div id="uploadstatus" class="logstatus" aria-live="polite"></div>' +
       '<label>Interaction log <span id="logn"></span><textarea id="logout" readonly></textarea></label>' +
-      '<div class="row"><button type="button" id="copylog">Copy log</button><button type="button" id="clearlog">Clear log and cart</button><button type="button" id="closepanel">Close</button></div></section>';
+      '<div class="row"><button type="button" id="copylog">Copy log</button><button type="button" id="clearlog">Clear local log and cart</button><button type="button" id="closepanel">Close</button></div></section>';
     refreshLog();
+    flushLogQueue();
     $('condsel').addEventListener('change', function (e) { location.hash = e.target.value; });
     $('copylog').addEventListener('click', function () {
       var t = $('logout'), done = function () { $('copylog').textContent = 'Copied'; setTimeout(function () { var b = $('copylog'); if (b) b.textContent = 'Copy log'; }, 1200); };
       try { navigator.clipboard.writeText(logText()).then(done, function () { t.select(); }); } catch (err) { t.select(); }
     });
-    $('clearlog').addEventListener('click', function () { st.log = []; st.cart = {}; updateCount(); refreshLog(); });
+    $('clearlog').addEventListener('click', function () {
+      st.log = [];
+      st.pending = [];
+      st.cart = {};
+      saveStoredArray(LOG_KEY, st.log);
+      saveStoredArray(PENDING_KEY, st.pending);
+      updateCount();
+      refreshLog();
+      updateUploadStatus('Local log cleared. Events already uploaded to the Sheet are not deleted.');
+    });
     $('closepanel').addEventListener('click', togglePanel);
   }
   $('rbtn').addEventListener('click', togglePanel);
@@ -507,5 +657,6 @@
   window.addEventListener('hashchange', applyHash);
   home();
   applyHash();
+  logEv('session_loaded', { pageReload: !isNewSession });
 })();
 </script>
